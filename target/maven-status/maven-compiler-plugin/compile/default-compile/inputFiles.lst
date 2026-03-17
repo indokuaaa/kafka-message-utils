@@ -1,0 +1,9 @@
+/Users/n2m/indokuDev/vscode_work/github-private/kafka-message-utils/src/main/java/io/github/indoku/kafka/config/KafkaConsumerConfig.java
+/Users/n2m/indokuDev/vscode_work/github-private/kafka-message-utils/src/main/java/io/github/indoku/kafka/config/KafkaProducerConfig.java
+/Users/n2m/indokuDev/vscode_work/github-private/kafka-message-utils/src/main/java/io/github/indoku/kafka/consumer/KafkaMessageConsumer.java
+/Users/n2m/indokuDev/vscode_work/github-private/kafka-message-utils/src/main/java/io/github/indoku/kafka/consumer/MessageHandler.java
+/Users/n2m/indokuDev/vscode_work/github-private/kafka-message-utils/src/main/java/io/github/indoku/kafka/exception/KafkaUtilsException.java
+/Users/n2m/indokuDev/vscode_work/github-private/kafka-message-utils/src/main/java/io/github/indoku/kafka/producer/KafkaMessageProducer.java
+/Users/n2m/indokuDev/vscode_work/github-private/kafka-message-utils/src/main/java/io/github/indoku/kafka/producer/SendResult.java
+/Users/n2m/indokuDev/vscode_work/github-private/kafka-message-utils/src/main/java/io/github/indoku/kafka/serializer/JsonDeserializer.java
+/Users/n2m/indokuDev/vscode_work/github-private/kafka-message-utils/src/main/java/io/github/indoku/kafka/serializer/JsonSerializer.java
