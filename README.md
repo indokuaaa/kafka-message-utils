@@ -13,6 +13,13 @@ Kafka producer / consumer 사용할 때 반복되는 코드를 줄여주는 공�
   - [Producer](#producer)
   - [Consumer](#consumer)
   - [JSON 직렬화](#json-직렬화)
+- [유틸리티](#유틸리티)
+  - [KafkaHeaderUtils](#kafkaheaderutils)
+  - [KafkaTopicUtils](#kafkatopicutils)
+  - [CorrelationIdUtils](#correlationidutils)
+  - [KafkaMetricsUtils](#kafkametricsutils)
+  - [MessageTimestampUtils](#messagetimestamputils)
+  - [KafkaHealthChecker](#kafkahealthchecker)
 - [배포](#배포)
 
 ---
@@ -175,6 +182,142 @@ consumer.subscribe(record -> {
     OrderEvent event = record.value();
     System.out.println("orderId=" + event.orderId());
 }, "orders");
+```
+
+---
+
+## 유틸리티
+
+### KafkaHeaderUtils
+
+Kafka 메시지 헤더 읽기/쓰기를 간단하게 처리합니다.
+
+```java
+// 헤더 쓰기
+ProducerRecord<String, String> record = new ProducerRecord<>("my-topic", "value");
+KafkaHeaderUtils.setString(record.headers(), "trace-id", "abc-123");
+
+// 헤더 읽기
+String traceId = KafkaHeaderUtils.getString(consumerRecord, "trace-id").orElse("unknown");
+
+// 헤더 존재 여부
+boolean exists = KafkaHeaderUtils.contains(consumerRecord, "trace-id");
+```
+
+---
+
+### KafkaTopicUtils
+
+AdminClient 기반 토픽 관리 유틸리티입니다.
+
+```java
+try (KafkaTopicUtils topicUtils = new KafkaTopicUtils("localhost:9092")) {
+    // 토픽 존재 여부
+    boolean exists = topicUtils.exists("my-topic");
+
+    // 파티션 수 조회
+    int partitions = topicUtils.partitionCount("my-topic");
+
+    // 토픽 목록
+    Set<String> topics = topicUtils.listTopics();
+
+    // 토픽 생성 (없을 때만)
+    topicUtils.createIfAbsent("new-topic", 3, (short) 1);
+
+    // 토픽 삭제
+    topicUtils.delete("old-topic");
+}
+```
+
+---
+
+### CorrelationIdUtils
+
+메시지 추적을 위한 correlation-id 헤더 자동 생성/추출 유틸리티입니다.
+
+```java
+// Producer: correlation-id 자동 생성 후 헤더에 주입
+ProducerRecord<String, String> record = new ProducerRecord<>("my-topic", "value");
+String correlationId = CorrelationIdUtils.inject(record);
+
+// Producer: 직접 지정한 ID 주입
+CorrelationIdUtils.inject(record, "custom-id-001");
+
+// Consumer: 헤더에서 추출
+String cid = CorrelationIdUtils.extract(consumerRecord).orElse("unknown");
+
+// Consumer: 없으면 새로 생성해서 반환
+String cid = CorrelationIdUtils.extractOrGenerate(consumerRecord);
+```
+
+---
+
+### KafkaMetricsUtils
+
+Consumer lag, 오프셋, 컨슈머 그룹 조회 유틸리티입니다.
+
+```java
+try (KafkaMetricsUtils metrics = new KafkaMetricsUtils("localhost:9092")) {
+    // 그룹 전체 lag 합계
+    long totalLag = metrics.totalLag("my-group");
+
+    // 특정 토픽 lag
+    long topicLag = metrics.totalLag("my-group", "orders");
+
+    // 파티션별 lag
+    Map<TopicPartition, Long> lagMap = metrics.lagPerPartition("my-group");
+
+    // 커밋된 오프셋 조회
+    Map<TopicPartition, Long> offsets = metrics.committedOffsets("my-group");
+
+    // 컨슈머 그룹 목록
+    Set<String> groups = metrics.listConsumerGroups();
+}
+```
+
+---
+
+### MessageTimestampUtils
+
+Kafka 레코드 타임스탬프를 Java 시간 타입으로 변환합니다.
+
+```java
+// ConsumerRecord → Instant
+Instant instant = MessageTimestampUtils.toInstant(record);
+
+// ConsumerRecord → LocalDateTime (시스템 타임존)
+LocalDateTime ldt = MessageTimestampUtils.toLocalDateTime(record);
+
+// ConsumerRecord → LocalDateTime (UTC)
+LocalDateTime utc = MessageTimestampUtils.toLocalDateTime(record, ZoneId.of("UTC"));
+
+// epoch millis → LocalDateTime
+LocalDateTime ldt = MessageTimestampUtils.toLocalDateTime(1705321800000L, ZoneOffset.UTC);
+```
+
+---
+
+### KafkaHealthChecker
+
+브로커 연결 상태를 확인하는 헬스 체커입니다.
+
+```java
+try (KafkaHealthChecker checker = new KafkaHealthChecker("localhost:9092")) {
+    // 연결 상태 확인
+    boolean healthy = checker.isHealthy();
+
+    // 활성 브로커 수
+    int count = checker.brokerCount();
+
+    // 클러스터 ID
+    String clusterId = checker.clusterId();
+
+    // 컨트롤러 노드 정보
+    Node controller = checker.controller();
+}
+
+// 타임아웃 지정 (기본 5초)
+KafkaHealthChecker checker = new KafkaHealthChecker("localhost:9092", 3000L);
 ```
 
 ---
